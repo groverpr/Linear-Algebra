@@ -1,0 +1,638 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from __future__ import print_function\n",
+    "import time\n",
+    "import numpy\n",
+    "import sys\n",
+    "import matplotlib.pyplot as plt\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Problem 1: Updated elimination matrix"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 1.A \n",
+    "defining function to perform elimination\n",
+    "\n",
+    "input A can be nxn matrix\n",
+    "input v should be nx1 matrix"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 118,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def eliminate(A, v):\n",
+    "    print(\"Original Matrix\")\n",
+    "    print(A)\n",
+    "    try:\n",
+    "        for i in range(A.shape[0]-1):\n",
+    "            for j in range(A.shape[1]-1-i):\n",
+    "                pivot = A[i, i]\n",
+    "            \n",
+    "                if pivot == 0:\n",
+    "                    swap_index = (numpy.where(A[i+1:,i] != 0)[0][0])+ i + 1\n",
+    "\n",
+    "                    temp = A[i].copy()\n",
+    "                    A[i] = A[swap_index]\n",
+    "                    A[swap_index] = temp\n",
+    "                \n",
+    "                    temp2 = v[i].copy()\n",
+    "                    v[i] = v[swap_index]\n",
+    "                    v[swap_index] = temp2\n",
+    "\n",
+    "                multi = A[i+j+1, i]/ A[i, i]\n",
+    "            \n",
+    "                A[i+j+1] = A[i+j+1] - A[i]*multi  \n",
+    "                v[i+j+1] = v[i+j+1] - v[i]*multi \n",
+    "                print(\"Row operation #\", i+j+1)\n",
+    "                print(A)\n",
+    "    \n",
+    "        if A[A.shape[0]-1, A.shape[1]-1] == 0:\n",
+    "            sys.exit(\"Matrix not full rank, can't solve\")\n",
+    "    \n",
+    "    except IndexError:\n",
+    "        sys.exit(\"Couldn't find pivot, non unique solutions\")\n",
+    "    return A,v"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Back substituion function"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 62,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def backsub(A,v):\n",
+    "    n = A.shape[0]\n",
+    "    listx = [0]*n\n",
+    "    listy = [0]*n\n",
+    "    for i in range(1,n+1):\n",
+    "        some_number = 0\n",
+    "        \n",
+    "        for j in range(i):\n",
+    "            some_number = some_number + listx[j]*A[n-i, n-j-1]\n",
+    "            \n",
+    "        listx[i-1] = (v[n-i] - some_number)/A[n-i, n-i]\n",
+    "        listy[n-i] = listx[i-1]\n",
+    "    \n",
+    "    return listy\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 1.B \n",
+    "Let's solve for Ax = b for some 3x3 matrix which has unique solution and requires permuations. As it can be seen from  below test case, **`Row Operation # 2`** is a ***permutation***"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 119,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Original Matrix\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 1.  2.  5.]\n",
+      " [ 3.  9.  7.]]\n",
+      "Row operation # 1\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  0.  2.]\n",
+      " [ 3.  9.  7.]]\n",
+      "Row operation # 2\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  0.  2.]\n",
+      " [ 0.  3. -2.]]\n",
+      "Row operation # 2\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  3. -2.]\n",
+      " [ 0.  0.  2.]]\n",
+      "Final reduced matrix is \n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  3. -2.]\n",
+      " [ 0.  0.  2.]]\n",
+      "Final updated b is\n",
+      "[[ 2.]\n",
+      " [-5.]\n",
+      " [ 1.]]\n",
+      "Final solution of system of equations is \n",
+      "[[ 3.16]\n",
+      " [-1.33]\n",
+      " [ 0.5 ]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Making example matrix \n",
+    "A1 = numpy.matrix([[1,2,3], [1,2,5], [3,9,7]], dtype = float)\n",
+    "b1 = numpy.mat([2,3,1], dtype = float)\n",
+    "b1 = b1.reshape(3,1)\n",
+    "\n",
+    "# Applying my algorithms\n",
+    "x1, y1 = eliminate(A1, b1)\n",
+    "z1 = backsub(x1, y1)\n",
+    "print(\"Final reduced matrix is \")\n",
+    "print(x1)\n",
+    "print(\"Final updated b is\")\n",
+    "print(y1)\n",
+    "print(\"Final solution of system of equations is \")\n",
+    "print(z1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 1.C\n",
+    "Adding error messages in code for elimination. Here are 2 examples system of equations which throw an error. \n",
+    "\n",
+    "#### I) Last row becomes all zero (i.e. Matrix A not full rank)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 120,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Original Matrix\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 3.  2.  5.]\n",
+      " [ 4.  4.  8.]]\n",
+      "Row operation # 1\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0. -4. -4.]\n",
+      " [ 4.  4.  8.]]\n",
+      "Row operation # 2\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0. -4. -4.]\n",
+      " [ 0. -4. -4.]]\n",
+      "Row operation # 2\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0. -4. -4.]\n",
+      " [ 0.  0.  0.]]\n"
+     ]
+    },
+    {
+     "ename": "SystemExit",
+     "evalue": "Matrix not full rank, can't solve",
+     "output_type": "error",
+     "traceback": [
+      "An exception has occurred, use %tb to see the full traceback.\n",
+      "\u001b[0;31mSystemExit\u001b[0m\u001b[0;31m:\u001b[0m Matrix not full rank, can't solve\n"
+     ]
+    }
+   ],
+   "source": [
+    "A3_1 = numpy.matrix([[1,2,3], [3,2,5], [4,4,8]], dtype = float)\n",
+    "b3_1 = numpy.mat([2,3,1], dtype = float)\n",
+    "b3_1 = b3_1.reshape(3,1)\n",
+    "\n",
+    "# Applying my algorithms\n",
+    "x2, y2 = eliminate(A3_1, b3_1)\n",
+    "z2 = backsub(x2, y2)\n",
+    "print(\"Final reduced matrix is \")\n",
+    "print(x2)\n",
+    "print(\"Final updated b is\")\n",
+    "print(y2)\n",
+    "print(\"Final solution of system of equations is \", z2)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### II) When non zero pivots are not found while searching rows"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 121,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Original Matrix\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 1.  2.  4.]\n",
+      " [ 1.  2.  5.]]\n",
+      "Row operation # 1\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  0.  1.]\n",
+      " [ 1.  2.  5.]]\n",
+      "Row operation # 2\n",
+      "[[ 1.  2.  3.]\n",
+      " [ 0.  0.  1.]\n",
+      " [ 0.  0.  2.]]\n"
+     ]
+    },
+    {
+     "ename": "SystemExit",
+     "evalue": "Couldn't find pivot, non unique solutions",
+     "output_type": "error",
+     "traceback": [
+      "An exception has occurred, use %tb to see the full traceback.\n",
+      "\u001b[0;31mSystemExit\u001b[0m\u001b[0;31m:\u001b[0m Couldn't find pivot, non unique solutions\n"
+     ]
+    }
+   ],
+   "source": [
+    "A3_2 = numpy.matrix([[1,2,3], [1,2,4], [1,2,5]], dtype = float)\n",
+    "b3_2 = numpy.mat([2,3,1], dtype = float)\n",
+    "b3_2 = b3_2.reshape(3,1)\n",
+    "\n",
+    "# Applying my algorithms\n",
+    "x3, y3 = eliminate(A3_2, b3_2)\n",
+    "z3 = backsub(x3, y3)\n",
+    "print(\"Final reduced matrix is \")\n",
+    "print(x3)\n",
+    "print(\"Final updated b is\")\n",
+    "print(y3)\n",
+    "print(\"Final solution of system of equations is \", z3)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Problem 2: Algorithm complexity\n",
+    "### Running my algorithm for matrix size of 2^k (for k = 0 to 12) [Plotting only for k = 4 to 12, as asked in question]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Elapsed time by my algorithm for 2 to the power  0  is  6.19888305664e-05\n",
+      "Elapsed time by my algorithm for 2 to the power  1  is  6.69956207275e-05\n",
+      "Elapsed time by my algorithm for 2 to the power  2  is  8.29696655273e-05\n",
+      "Elapsed time by my algorithm for 2 to the power  3  is  0.000268936157227\n",
+      "Elapsed time by my algorithm for 2 to the power  4  is  0.00123190879822\n",
+      "Elapsed time by my algorithm for 2 to the power  5  is  0.00513792037964\n",
+      "Elapsed time by my algorithm for 2 to the power  6  is  0.0192620754242\n",
+      "Elapsed time by my algorithm for 2 to the power  7  is  0.0555791854858\n",
+      "Elapsed time by my algorithm for 2 to the power  8  is  0.185680866241\n",
+      "Elapsed time by my algorithm for 2 to the power  9  is  0.867347955704\n",
+      "Elapsed time by my algorithm for 2 to the power  10  is  3.46554303169\n",
+      "Elapsed time by my algorithm for 2 to the power  11  is  19.8881778717\n",
+      "Elapsed time by my algorithm for 2 to the power  12  is  99.6334459782\n"
+     ]
+    }
+   ],
+   "source": [
+    "start_time = [1 for k in range(13)]\n",
+    "elapsed_time = [1 for k in range(13)]\n",
+    "\n",
+    "for i in range(13):\n",
+    "    start_time[i] = time.time()\n",
+    "    \n",
+    "    for t in range(10):\n",
+    "        R2 = numpy.random.rand(2**i,2**i)\n",
+    "        R2.astype(float)\n",
+    "        w2 = [1 for j in range(2**i)]\n",
+    "    \n",
+    "        x2, y2 = eliminate(R2, w2)\n",
+    "        z2 = backsub(x2, y2)\n",
+    "    elapsed_time[i] = (time.time() - start_time[i])/10\n",
+    "    print(\"Elapsed time by my algorithm for 2 to the power \", i, \" is \", elapsed_time[i])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Plot of log2(Tk) vs. k"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x11efdad90>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "elapsed_times_copy = elapsed_time[4:13]\n",
+    "y_axis = numpy.log2(elapsed_times_copy)\n",
+    "x_axis = range(4,13)\n",
+    "plt.plot(x_axis, y_axis, 'r--')\n",
+    "plt.xlabel(\"Matrix size in 2^k\")\n",
+    "plt.ylabel(\"Log2 of elapsed times to run algorithm\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The complexity is N^a *(where N is size of matrix; a is order of complexity)*. \n",
+    "Now our size of matrices are 2^k(k is raised power). Therefore, time taken by matrices will be some power of 2^k and hence, log2(time) will be a factor of k.a *(where k is raised power and a is order of complexity)* If we plot log2(Time) vs k for different values of k, then `ka/k`, i.e. slope of graph will give leading order of complexity\n",
+    "\n",
+    "The slope of above plot of **log2(Tk) vs. k** is coming as approximately linear with slope of **2.2**. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Problem 3: System of linear equations\n",
+    "### Part A: Solutions for different values of e = 10^i"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Solution to system of equations for e = 0.1 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.]]), matrix([[ 1.]])]\n",
+      " \n",
+      "Solution to system of equations for e = 0.01 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.]]), matrix([[ 1.]])]\n",
+      " \n",
+      "Solution to system of equations for e = 0.001 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.]]), matrix([[ 1.]])]\n",
+      " \n",
+      "Solution to system of equations for e = 0.0001 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.]]), matrix([[ 1.]])]\n",
+      " \n",
+      "Solution to system of equations for e = 1e-08 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.]]), matrix([[ 1.]])]\n",
+      " \n",
+      "Solution to system of equations for e = 1e-12 :\n",
+      "[matrix([[ 1.]]), matrix([[ 1.0000111]]), matrix([[ 0.9999778]])]\n",
+      " \n",
+      "Solution to system of equations for e = 1e-16 :\n",
+      "[matrix([[ 1.]]), matrix([[ 0.7]]), matrix([[ 1.6]])]\n",
+      " \n"
+     ]
+    }
+   ],
+   "source": [
+    "ex = [1,2,3,4,8,12,16]\n",
+    "e = []\n",
+    "for i in ex:\n",
+    "    e.append(10**(-i))\n",
+    "\n",
+    "# Running loop to put different values of e in system of equations\n",
+    "for t in e:\n",
+    "    Row1 = [3,2,1]\n",
+    "    Row2 = [2, 2*t, 2*t]\n",
+    "    Row3 = [1, 2*t, -1*t]\n",
+    "    B = numpy.mat([6, 2 + 4*t, 1 + t])\n",
+    "    B = B.reshape(3,1)\n",
+    "    Matrix = numpy.matrix([Row1, Row2, Row3], dtype = float)\n",
+    "#    print(Matrix)\n",
+    "#    print(B)\n",
+    " \n",
+    "    mid1, mid2 = eliminate(Matrix, B)\n",
+    "    sol1 = backsub(mid1, mid2)\n",
+    "    \n",
+    "    print(\"Solution to system of equations for e =\", t, \":\")\n",
+    "    print(sol1)\n",
+    "    print(\" \")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "What is happening above is that our system of equations is independent of values of 'e' and for different\n",
+    "values of `e`, our solution to equations is [1, 1, 1], but this solution is breaking out at e = 10^(-16) where\n",
+    "it is giving [1, 0.7, 1.6]. Although our system looks independent of `e` if we solve manually, we solution reaches to approximation when `e` is 10^(-16)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Part B: Rounding each computation steps for e = 10^-3"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Below, defining ***eliminate_round*** function which rounds all compuations in between steps (round also mentioned in comments)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 111,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def eliminate_round(A, v):\n",
+    "    print(A)\n",
+    "    try:\n",
+    "        for i in range(A.shape[0]-1):\n",
+    "            for j in range(A.shape[1]-1-i):\n",
+    "                pivot = A[i, i]\n",
+    "            \n",
+    "                if pivot == 0:\n",
+    "                    swap_index = (numpy.where(A[i+1:,i] != 0)[0][0])+ i + 1\n",
+    "\n",
+    "                    temp = A[i].copy()\n",
+    "                    A[i] = A[swap_index]\n",
+    "                    A[swap_index] = temp\n",
+    "                \n",
+    "                    temp2 = v[i].copy()\n",
+    "                    v[i] = v[swap_index]\n",
+    "                    v[swap_index] = temp2\n",
+    "                    \n",
+    "                multi = A[i+j+1, i]/ A[i, i]\n",
+    "            # 1st rounding\n",
+    "                A[i+j+1] = numpy.around((A[i+j+1] - A[i]*multi), 2)  \n",
+    "                print(A)\n",
+    "            # 2nd rounding\n",
+    "                v[i+j+1] = numpy.around((v[i+j+1] - v[i]*multi), 2)            \n",
+    "    \n",
+    "        if A[A.shape[0]-1, A.shape[1]-1] == 0:\n",
+    "            sys.exit(\"Matrix not full rank, can't solve {Matrix singular}\")\n",
+    "    \n",
+    "    except IndexError:\n",
+    "        sys.exit(\"Couldn't find pivot, non unique solutions\")\n",
+    "        \n",
+    "    # Final rounding\n",
+    "    A = numpy.around(A,2)\n",
+    "    v = numpy.around(v,2)\n",
+    "    return A,v"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Below, defining ***backsub_round*** which rounds computations in between steps for back-substitution (mentioned in comments)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def backsub_round(A,v):\n",
+    "    n = A.shape[0]\n",
+    "    listx = [0]*n\n",
+    "    listy = [0]*n\n",
+    "    for i in range(1,n+1):\n",
+    "        some_number = 0\n",
+    "        \n",
+    "        for j in range(i):\n",
+    "            some_number = some_number + listx[j]*A[n-i, n-j-1]\n",
+    "            # First rounding\n",
+    "            some_number = round(some_number, 2)\n",
+    "        # Second rounding\n",
+    "        listx[i-1] = round((v[n-i] - some_number)/A[n-i, n-i],2)\n",
+    "        listy[n-i] = round(listx[i-1],2)\n",
+    "    return_list = numpy.around(numpy.vstack((listy[0], listy[1], listy[2])),2)\n",
+    "    return return_list"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now, let's compute out solutions using new xxx_round functions"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 117,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[  3.00000000e+00   2.00000000e+00   1.00000000e+00]\n",
+      " [  2.00000000e+00   2.00000000e-03   2.00000000e-03]\n",
+      " [  1.00000000e+00   2.00000000e-03  -1.00000000e-03]]\n",
+      "[[  3.00000000e+00   2.00000000e+00   1.00000000e+00]\n",
+      " [  0.00000000e+00  -1.33000000e+00  -6.60000000e-01]\n",
+      " [  1.00000000e+00   2.00000000e-03  -1.00000000e-03]]\n",
+      "[[ 3.    2.    1.  ]\n",
+      " [ 0.   -1.33 -0.66]\n",
+      " [ 0.   -0.66 -0.33]]\n",
+      "[[ 3.    2.    1.  ]\n",
+      " [ 0.   -1.33 -0.66]\n",
+      " [ 0.    0.   -0.  ]]\n"
+     ]
+    },
+    {
+     "ename": "SystemExit",
+     "evalue": "Matrix not full rank, can't solve {Matrix singular}",
+     "output_type": "error",
+     "traceback": [
+      "An exception has occurred, use %tb to see the full traceback.\n",
+      "\u001b[0;31mSystemExit\u001b[0m\u001b[0;31m:\u001b[0m Matrix not full rank, can't solve {Matrix singular}\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Updating equations and making system matrices\n",
+    "x = 10**(-3)\n",
+    "Row1_2 = [3,2,1]\n",
+    "Row2_2 = [2, 2*x, 2*x]\n",
+    "Row3_2 = [1, 2*x, -1*x]\n",
+    "B_2 = numpy.mat([6, 2 + 4*x, 1 + x])\n",
+    "B_2 = B_2.reshape(3,1)\n",
+    "Matrix_2 = numpy.matrix([Row1_2, Row2_2, Row3_2], dtype = float)\n",
+    "\n",
+    "# Solving \n",
+    "mid1_2, mid2_2 = eliminate_round(Matrix_2, B_2)\n",
+    "sol1_2 = backsub_round(mid1_2, mid2_2)\n",
+    "mid1_2\n",
+    "sol1_2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "As oberved above, if we round the calculations to 2 decimal places and send constrains to 3 decimal places \n",
+    "(by multiplying e by 10^(-3)), we are basically making 2nd and 3rd row of reduced row echelon form same.\n",
+    "That is why, I am getting ***singular matrix*** error. "
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.13"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
